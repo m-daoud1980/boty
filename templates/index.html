@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <title>واجهة بوت التداول</title>
+    <style>
+        body {
+            font-family: Arial;
+            max-width: 600px;
+            margin: 40px auto;
+            background: #f0f0f0;
+            padding: 20px;
+            border-radius: 10px;
+        }
+        input, button {
+            width: 100%;
+            margin-top: 10px;
+            padding: 10px;
+            font-size: 16px;
+        }
+        #log {
+            margin-top: 20px;
+            white-space: pre-wrap;
+            background: #fff;
+            padding: 10px;
+            border-radius: 8px;
+            min-height: 150px;
+            border: 1px solid #ccc;
+            max-height: 300px;
+            overflow-y: scroll;
+        }
+    </style>
+</head>
+<body>
+    <h2>💻 واجهة بوت التداول</h2>
+    <input type="text" id="symbol" placeholder="🔹 رمز الزوج (مثال: BTCUSDT)">
+    <input type="number" id="qty" placeholder="🔹 الكمية Q">
+    <input type="number" id="short_price" placeholder="🔹 سعر الشورت">
+    <button onclick="startBot()">🚀 تشغيل البوت</button>
+
+    <h3>📡 سجل الأحداث</h3>
+    <div id="log">⬅️ لا يوجد سجل بعد</div>
+
+    <script>
+        let source = null;
+
+        function startBot() {
+            const symbol = document.getElementById("symbol").value.toUpperCase();
+            const qty = document.getElementById("qty").value;
+            const short_price = document.getElementById("short_price").value;
+
+            fetch("/start-bot", {
+                method: "POST",
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ symbol, qty, short_price })
+            })
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById("log").innerText = data.message;
+                startLogStream(symbol);
+            });
+        }
+
+        function startLogStream(symbol) {
+            if (source) source.close();
+
+            source = new EventSource("/log-stream/" + symbol);
+            source.onmessage = function(event) {
+                const logBox = document.getElementById("log");
+                logBox.innerHTML += event.data + "<br>";
+                logBox.scrollTop = logBox.scrollHeight;
+            };
+        }
+    </script>
+</body>
+</html>
